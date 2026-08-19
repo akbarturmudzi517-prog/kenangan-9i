@@ -1,6 +1,7 @@
 // State Management
-let mediaItems = JSON.parse(localStorage.getItem('smp_memories')) || [];
+let mediaItems = [];
 let currentFilter = 'all';
+let db;
 
 // DOM Elements
 const mediaInput = document.getElementById('mediaInput');
@@ -13,16 +14,56 @@ const lightbox = document.getElementById('lightbox');
 const lightboxContainer = document.getElementById('lightboxMediaContainer');
 const lightboxCaption = document.getElementById('lightboxCaption');
 
-// Simpan data ke LocalStorage
-function saveToLocalStorage() {
-  try {
-    localStorage.setItem('smp_memories', JSON.stringify(mediaItems));
-  } catch (e) {
-    alert('Penyimpanan penuh! Gunakan foto/video dengan ukuran yang lebih kecil.');
+// 1. Inisialisasi IndexedDB (Penyimpanan Besar)
+const request = indexedDB.open('SMPMemoriesDB', 1);
+
+request.onupgradeneeded = function(e) {
+  db = e.target.result;
+  if (!db.objectStoreNames.contains('memories')) {
+    db.createObjectStore('memories', { keyPath: 'id' });
   }
+};
+
+request.onsuccess = function(e) {
+  db = e.target.result;
+  loadFromIndexedDB();
+};
+
+request.onerror = function() {
+  alert('Gagal membuka database penyimpanan browser.');
+};
+
+// 2. Fungsi Simpan & Ambil Data dari IndexedDB
+function saveToIndexedDB(item) {
+  const transaction = db.transaction(['memories'], 'readwrite');
+  const store = transaction.objectStore('memories');
+  store.put(item);
 }
 
-// Handle File Upload & Konversi ke Base64 (agar bisa disimpan)
+function removeFromIndexedDB(id) {
+  const transaction = db.transaction(['memories'], 'readwrite');
+  const store = transaction.objectStore('memories');
+  store.delete(id);
+}
+
+function clearIndexedDB() {
+  const transaction = db.transaction(['memories'], 'readwrite');
+  const store = transaction.objectStore('memories');
+  store.clear();
+}
+
+function loadFromIndexedDB() {
+  const transaction = db.transaction(['memories'], 'readonly');
+  const store = transaction.objectStore('memories');
+  const getAll = store.getAll();
+
+  getAll.onsuccess = function() {
+    mediaItems = getAll.result || [];
+    renderGallery();
+  };
+}
+
+// 3. Handle File Upload
 mediaInput.addEventListener('change', function(e) {
   const files = e.target.files;
   if (!files || files.length === 0) return;
@@ -35,14 +76,14 @@ mediaInput.addEventListener('change', function(e) {
       const mediaObj = {
         id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         type: isVideo ? 'video' : 'image',
-        url: event.target.result, // Mengubah file jadi string Base64
+        url: event.target.result,
         title: file.name.split('.')[0],
         description: '',
         date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
       };
 
       mediaItems.unshift(mediaObj);
-      saveToLocalStorage();
+      saveToIndexedDB(mediaObj);
       renderGallery();
     };
 
@@ -52,7 +93,7 @@ mediaInput.addEventListener('change', function(e) {
   mediaInput.value = '';
 });
 
-// Render Gallery Elements
+// 4. Render Tampilan Galeri
 function renderGallery() {
   const filtered = mediaItems.filter(item => {
     if (currentFilter === 'all') return true;
@@ -107,11 +148,11 @@ function renderGallery() {
   });
 }
 
-// Filter Media Function
+// 5. Fitur Tambahan & Kontrol
 function filterMedia(type) {
   currentFilter = type;
   document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-  if (event) event.target.classList.add('active');
+  if (window.event) window.event.target.classList.add('active');
   renderGallery();
 }
 
@@ -119,7 +160,7 @@ function updateItemTitle(id, newTitle) {
   const item = mediaItems.find(i => i.id === id);
   if (item) {
     item.title = newTitle;
-    saveToLocalStorage();
+    saveToIndexedDB(item);
   }
 }
 
@@ -127,14 +168,14 @@ function updateItemDesc(id, newDesc) {
   const item = mediaItems.find(i => i.id === id);
   if (item) {
     item.description = newDesc;
-    saveToLocalStorage();
+    saveToIndexedDB(item);
   }
 }
 
 function deleteItem(id) {
   if (confirm('Apakah kamu yakin ingin menghapus kenangan ini?')) {
     mediaItems = mediaItems.filter(i => i.id !== id);
-    saveToLocalStorage();
+    removeFromIndexedDB(id);
     renderGallery();
   }
 }
@@ -143,12 +184,11 @@ function clearAllMedia() {
   if (mediaItems.length === 0) return;
   if (confirm('Apakah kamu yakin ingin menghapus SELURUH kenangan di galeri?')) {
     mediaItems = [];
-    localStorage.removeItem('smp_memories');
+    clearIndexedDB();
     renderGallery();
   }
 }
 
-// Lightbox Handler
 function openLightbox(url, type, caption) {
   lightboxContainer.innerHTML = '';
   if (type === 'image') {
@@ -166,7 +206,6 @@ function closeLightbox(e) {
   }
 }
 
-// Load Demo Preset Data
 function loadDemoData() {
   const demoData = [
     {
@@ -174,27 +213,18 @@ function loadDemoData() {
       type: 'image',
       url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80',
       title: 'Sahabat Seperjuangan Kelas 9B',
-      description: 'Foto pas waktu syukuran kelulusan dan coret-coret kaos belakang sekolah. Momen paling nggak bisa dilupain!',
+      description: 'Foto pas waktu syukuran kelulusan dan coret-coret kaos belakang sekolah.',
       date: '12 Jun 2024'
-    },
-    {
-      id: 'demo_2',
-      type: 'image',
-      url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80',
-      title: 'Kantin Mbok Sri Pas Istirahat',
-      description: 'Jam istirahat kedua rebutan gorengan hangat sama es teh manis bareng geng cowok.',
-      date: '18 Jan 2024'
     }
   ];
 
-  mediaItems = [...demoData, ...mediaItems];
-  saveToLocalStorage();
+  demoData.forEach(item => {
+    mediaItems.unshift(item);
+    saveToIndexedDB(item);
+  });
   renderGallery();
 }
 
 function escapeHtml(text) {
   return text ? text.replace(/'/g, "&#39;").replace(/"/g, "&quot;") : '';
 }
-
-// Initialize Gallery
-renderGallery();
