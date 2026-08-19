@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nostalgia 9I - Galeri Kenangan Sekolah</title>
+  
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Hubungkan File CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- HERO HEADER SECTION -->
+  <header>
+    <div class="container">
+      <div class="badge">
+        <i class="fa-solid fa-graduation-cap"></i> Kenangan Masa Sekolah
+      </div>
+      <h1>Abadikan Setiap Detik <span>Masa SMP</span></h1>
+      <p>Simpan koleksi foto, video, cerita kocak, dan momen berharga bersama sahabat perjuanganmu dalam satu galeri estetik modern.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- TOOLBAR & DASHBOARD CONTROLS -->
+    <div class="toolbar-wrapper">
+      <div class="toolbar">
+        <div class="toolbar-stats">
+          <div class="stat-item">
+            <i class="fa-solid fa-photo-film"></i>
+            Total Media: <span id="totalCount">0</span>
+          </div>
+          <div class="stat-item">
+            <i class="fa-regular fa-image"></i>
+            Foto: <span id="photoCount">0</span>
+          </div>
+          <div class="stat-item">
+            <i class="fa-solid fa-video"></i>
+            Video: <span id="videoCount">0</span>
+          </div>
+        </div>
+
+        <div class="toolbar-actions">
+          <!-- Filter Tabs -->
+          <div class="filter-tabs">
+            <button class="filter-btn active" onclick="filterMedia('all')">Semua</button>
+            <button class="filter-btn" onclick="filterMedia('image')">Foto</button>
+            <button class="filter-btn" onclick="filterMedia('video')">Video</button>
+          </div>
+
+          <!-- Upload Button -->
+          <div class="upload-btn-wrapper">
+            <button class="btn btn-primary">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Tambah Kenangan
+            </button>
+            <input type="file" id="mediaInput" accept="image/*,video/*" multiple />
+          </div>
+
+          <!-- Demo Preset Button -->
+          <button class="btn btn-secondary" onclick="loadDemoData()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Contoh Demo
+          </button>
+
+          <!-- Clear All Button -->
+          <button class="btn btn-danger" onclick="clearAllMedia()" title="Hapus Semua Media">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GALLERY GRID CONTAINER -->
+    <div class="gallery-grid" id="galleryGrid">
+      <!-- Empty State View -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-state-icon">
+          <i class="fa-regular fa-folder-open"></i>
+        </div>
+        <h3>Belum Ada Kenangan Tersimpan</h3>
+        <p>Klik tombol <strong>"Tambah Kenangan"</strong> untuk mengunggah foto/video kamu atau tekan tombol <strong>"Contoh Demo"</strong> untuk melihat tampilan sampel.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- LIGHTBOX PREVIEW MODAL -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <div class="lightbox-content">
+      <button class="lightbox-close" onclick="closeLightbox(event)"><i class="fa-solid fa-xmark"></i></button>
+      <div id="lightboxMediaContainer"></div>
+      <div class="lightbox-caption" id="lightboxCaption"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <p>Dibuat dengan <span>&hearts;</span> untuk mengenang kebersamaan kelas SMP kita. Selamanya Sahabat.</p>
+    </div>
+  </footer>
+
+  <!-- Hubungkan File JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>
