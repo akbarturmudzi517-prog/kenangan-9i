@@ -1,5 +1,5 @@
 // State Management
-let mediaItems = [];
+let mediaItems = JSON.parse(localStorage.getItem('smp_memories')) || [];
 let currentFilter = 'all';
 
 // DOM Elements
@@ -13,25 +13,42 @@ const lightbox = document.getElementById('lightbox');
 const lightboxContainer = document.getElementById('lightboxMediaContainer');
 const lightboxCaption = document.getElementById('lightboxCaption');
 
-// Handle File Upload
+// Simpan data ke LocalStorage
+function saveToLocalStorage() {
+  try {
+    localStorage.setItem('smp_memories', JSON.stringify(mediaItems));
+  } catch (e) {
+    alert('Penyimpanan penuh! Gunakan foto/video dengan ukuran yang lebih kecil.');
+  }
+}
+
+// Handle File Upload & Konversi ke Base64 (agar bisa disimpan)
 mediaInput.addEventListener('change', function(e) {
   const files = e.target.files;
   if (!files || files.length === 0) return;
 
   Array.from(files).forEach(file => {
     const isVideo = file.type.startsWith('video/');
-    const mediaObj = {
-      id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-      type: isVideo ? 'video' : 'image',
-      url: URL.createObjectURL(file),
-      title: file.name.split('.')[0],
-      description: '',
-      date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+      const mediaObj = {
+        id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        type: isVideo ? 'video' : 'image',
+        url: event.target.result, // Mengubah file jadi string Base64
+        title: file.name.split('.')[0],
+        description: '',
+        date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+      };
+
+      mediaItems.unshift(mediaObj);
+      saveToLocalStorage();
+      renderGallery();
     };
-    mediaItems.unshift(mediaObj);
+
+    reader.readAsDataURL(file);
   });
 
-  renderGallery();
   mediaInput.value = '';
 });
 
@@ -94,23 +111,30 @@ function renderGallery() {
 function filterMedia(type) {
   currentFilter = type;
   document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-  event.target.classList.add('active');
+  if (event) event.target.classList.add('active');
   renderGallery();
 }
 
 function updateItemTitle(id, newTitle) {
   const item = mediaItems.find(i => i.id === id);
-  if (item) item.title = newTitle;
+  if (item) {
+    item.title = newTitle;
+    saveToLocalStorage();
+  }
 }
 
 function updateItemDesc(id, newDesc) {
   const item = mediaItems.find(i => i.id === id);
-  if (item) item.description = newDesc;
+  if (item) {
+    item.description = newDesc;
+    saveToLocalStorage();
+  }
 }
 
 function deleteItem(id) {
   if (confirm('Apakah kamu yakin ingin menghapus kenangan ini?')) {
     mediaItems = mediaItems.filter(i => i.id !== id);
+    saveToLocalStorage();
     renderGallery();
   }
 }
@@ -119,6 +143,7 @@ function clearAllMedia() {
   if (mediaItems.length === 0) return;
   if (confirm('Apakah kamu yakin ingin menghapus SELURUH kenangan di galeri?')) {
     mediaItems = [];
+    localStorage.removeItem('smp_memories');
     renderGallery();
   }
 }
@@ -159,26 +184,11 @@ function loadDemoData() {
       title: 'Kantin Mbok Sri Pas Istirahat',
       description: 'Jam istirahat kedua rebutan gorengan hangat sama es teh manis bareng geng cowok.',
       date: '18 Jan 2024'
-    },
-    {
-      id: 'demo_3',
-      type: 'image',
-      url: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80',
-      title: 'Study Tour ke Jogja',
-      description: 'Foto bareng di bus pas perjalanan malam ke Jogja. Nggak ada yang tidur gara-gara main gitaran.',
-      date: '05 Nov 2023'
-    },
-    {
-      id: 'demo_4',
-      type: 'video',
-      url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      title: 'Momen Juara Classmeeting',
-      description: 'Cuplikan final pertandingan futsal antar kelas. Sorak penonton heboh banget!',
-      date: '20 Des 2023'
     }
   ];
 
   mediaItems = [...demoData, ...mediaItems];
+  saveToLocalStorage();
   renderGallery();
 }
 
